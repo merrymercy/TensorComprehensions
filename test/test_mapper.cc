@@ -163,7 +163,7 @@ struct PolyhedralMapperTest : public ::testing::Test {
 TEST_F(PolyhedralMapperTest, Basic) {
   string tc = R"TC(
 def fun(float(N, M) A, float(N, M) B) -> (C) {
-  C(i, j) = A(i, j) + B(i, j)
+    C(n, m) = A(n, m) + B(n, m)
 }
 )TC";
 
@@ -202,9 +202,9 @@ TEST_F(PolyhedralMapperTest, MultiStmt) {
 def fun(float(N, N, N, N) A, float(N, N) B, float(N, N) C, float(N, N) D)
 -> (O1, O2, O3)
 {
-  O1(i, j) +=! A(i, j, rk, rl) * B(i, j)
-  O2(i, j) = C(i, j) * D(i, j)
-  O3(i, j) = O1(i, j) + O2(i, j)
+    O1(n0, n1) +=! A(n0, n1, r_n2, r_n3) * B(n0, n1)
+    O2(n0, n1)  =  C(n0, n1) *  D(n0, n1)
+    O3(n0, n1)  = O1(n0, n1) + O2(n0, n1)
 }
 )TC";
 
@@ -252,7 +252,7 @@ TEST_F(PolyhedralMapperTest, BareVariables) {
   string tc = R"TC(
 def fun(float(N, N) A) -> (O)
 {
-  O(i, j) = A(i, j) + i + j + N
+    O(n0, n1) = A(n0, n1) + n0 + n1 + N
 }
 )TC";
 
@@ -280,7 +280,7 @@ TEST_F(PolyhedralMapperTest, CudaFunctions) {
   string tc = R"TC(
 def fun(float(N, N) A, float(N, N) B, float(N) C) -> (O)
 {
-  O(i, j) = nextafter(C(i), exp(A(i, j))) + log(B(j, i))
+    O(n0, n1) = nextafter(C(n0), exp(A(n0, n1))) + log(B(n1, n0))
 }
 )TC";
 
@@ -377,7 +377,7 @@ TEST_F(PolyhedralMapperTest, Match1) {
 TEST_F(PolyhedralMapperTest, CopyTC) {
   string tc = R"TC(
 def fun(float(M, N) I) -> (O) {
-  O(i, j) = I(i, j)
+    O(m, n) = I(m, n)
 }
 )TC";
 
@@ -389,7 +389,7 @@ def fun(float(M, N) I) -> (O) {
 TEST_F(PolyhedralMapperTest, MatmulTC) {
   string tc = R"TC(
 def fun(float(M, K) A, float(K, N) B) -> (C) {
-  C(i, j) +=! A(i, k) * B(k, j)
+    C(m, n) +=! A(m, r_k) * B(r_k, n)
 }
 )TC";
 
@@ -424,7 +424,7 @@ TEST_F(PolyhedralMapperTest, MatmulNoshiftNoscale) {
 
 static const string kTcAdd = R"TC(
 def fun(float(N, M) A, float(N, M) B) -> (C) {
-  C(i, j) = A(i, j) + B(i, j)
+    C(n, m) = A(n, m) + B(n, m)
 }
 )TC";
 
@@ -473,7 +473,7 @@ TEST_F(PolyhedralMapperTest, Unroll2D) {
 TEST_F(PolyhedralMapperTest, Copy1D) {
   auto tc = R"TC(
 def fun(float(N) I) -> (O) {
-  O(i) = I(i)
+    O(n) = I(n)
 }
 )TC";
   auto scop = Prepare(tc);
@@ -493,7 +493,7 @@ def fun(float(N) I) -> (O) {
 TEST_F(PolyhedralMapperTest, DISABLED_0D) {
   auto tc = R"TC(
 def fun() -> (O) {
-  O = 0
+    O = 0
 }
 )TC";
   auto code = codegenMapped(tc, DefaultOptions());
@@ -510,8 +510,8 @@ def fun() -> (O) {
 TEST_F(PolyhedralMapperTest, Copy2) {
   auto tc = R"TC(
 def fun(float(N) I) -> (O1, O2) {
-  O1(i) = I(i)
-  O2(i) = O1(i)
+    O1(n) =  I(n)
+    O2(n) = O1(n)
 }
 )TC";
   auto mappingOptions = DefaultOptions();
@@ -538,8 +538,8 @@ def fun(float(N) I) -> (O1, O2) {
 TEST_F(PolyhedralMapperTest, CopyUnbalanced) {
   auto tc = R"TC(
 def fun(float(N) I1, float(N, N) I2) -> (O1, O2) {
-  O1(i) = I1(i)
-  O2(i, j) = I2(i, j)
+    O1(n)      = I1(n)
+    O2(n0, n1) = I2(n0, n1)
 }
 )TC";
   auto mappingOptions = DefaultOptions();
@@ -556,8 +556,8 @@ def fun(float(N) I1, float(N, N) I2) -> (O1, O2) {
 TEST_F(PolyhedralMapperTest, ReschedulingMaxMinFuse) {
   std::string tc = R"TC(
 def fun(float(N, M) A, float(N, M) B) -> (C,D) {
-  C(i, j) = A(i, j)
-  D(i, j) = B(i, j)
+    C(n, m) = A(n, m)
+    D(n, m) = B(n, m)
 })TC";
 
   auto originalScop = Prepare(tc);
@@ -644,8 +644,8 @@ def fun(float(N, M) A, float(N, M) B) -> (C,D) {
 TEST_F(PolyhedralMapperTest, Rescheduling2MM) {
   std::string tc = R"TC(
 def fun(float(M, K) A, float(K, N) B, float(K, N) C) -> (D, E) {
-  D(i, j) +=! A(i, k) * B(k, j)
-  E(i, j) +=! A(i, k) * C(k, j)
+    D(m, n) +=! A(m, r_k) * B(r_k, n)
+    E(m, n) +=! A(m, r_k) * C(r_k, n)
 })TC";
 
   auto mappingOptions = DefaultOptions();
@@ -677,7 +677,7 @@ def fun(float(M, K) A, float(K, N) B, float(K, N) C) -> (D, E) {
 TEST_F(PolyhedralMapperTest, Reduction1D) {
   string tc = R"TC(
 def fun(float(N) I) -> (O) {
-  O +=! I(i)
+    O +=! I(r_n)
 }
 )TC";
   auto mappingOptions = DefaultOptions();
@@ -691,7 +691,7 @@ def fun(float(N) I) -> (O) {
 
 static const string kTcMM = R"TC(
 def fun(float(M, K) A, float(K, N) B) -> (C) {
-  C(i, j) +=! A(i, k) * B(k, j)
+    C(m, n) +=! A(m, r_k) * B(r_k, n)
 })TC";
 
 /*
