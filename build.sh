@@ -20,7 +20,7 @@ WITH_NNPACK=${WITH_NNPACK:=OFF}
 WITH_TAPIR=${WITH_TAPIR:=ON}
 PYTHON=${PYTHON:="`which python3`"}
 PROTOC=${PROTOC:="`which protoc`"}
-CORES=${CORES:=32}
+CORES=${CORES:=8}
 VERBOSE=${VERBOSE:=0}
 CMAKE_VERSION=${CMAKE_VERSION:="`which cmake3 || which cmake`"}
 CAFFE2_BUILD_CACHE=${CAFFE2_BUILD_CACHE:=${TC_DIR}/third-party/.caffe2_build_cache}

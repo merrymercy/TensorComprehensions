@@ -203,6 +203,8 @@ message(STATUS "PYTHON site packages: \n${PYTHON_SITE_PACKAGES}")
 # if PyTorch is installed, we get libATen.so.1 from there, otherwise build it
 if (__torch_install EQUAL 0)
   message(STATUS "TORCH INSTALLED, linking to ATen from PyTorch")
+  ########## MODIFY HERE  ##########  
+  set(PYTHON_SITE_PACKAGES "/usr/local/lib/python3.5/dist-packages")
   set(ATEN_INCLUDE_DIR "${PYTHON_SITE_PACKAGES}/torch/lib/include")
   include_directories(${ATEN_INCLUDE_DIR})
   find_library(ATEN_LIBRARIES NAMES libATen.so.1 PATHS ${PYTHON_SITE_PACKAGES}/torch/lib)
