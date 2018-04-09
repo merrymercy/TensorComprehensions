@@ -36,7 +36,7 @@ resnet_wkls = [
 ]
 
 settings = {
-    "threads": 8, "generations": 8, "pop_size": 2, "number_elites": 0
+    "threads": 8, "generations": 8, "pop_size": 50, "number_elites": 0
 }
 
 conv2d_lang = """
@@ -90,14 +90,6 @@ if __name__ == '__main__':
         if os.path.isfile(tmp_filename):
             os.remove(tmp_filename)
 
-        # result file
-        try:
-            device_name = str(tvm.gpu(0).device_name).replace(' ', '-')
-        except Exception as e:
-            device_name = 'titanx'
-        result_filename = 'tc-baseline-%s.tsv' % device_name
-        fout = open(result_filename, 'a')
-
         wkls = name2workloads(args.task)
         for i in range(len(wkls)):
             tic = time.time()
@@ -140,8 +132,8 @@ if __name__ == '__main__':
                 xs = [0] + list(reversed(xs))
                 ys = [0] + list(reversed(ys))
 
-                for i in range(settings['generations']):
-                    node = (i + 1) * settings['pop_size']
+                for j in range(settings['generations']):
+                    node = (j + 1) * settings['pop_size']
                     if node not in xs:
                         print("! Error, cannot found node %d" % node)
 
@@ -160,6 +152,16 @@ if __name__ == '__main__':
 
             print("costs: %s\tgflops: %s\telapsed: %.2f" % (costs, gflops,
                                 (time.time() - tic) / args.n_ave_curve))
+
+            # write to result file
+            try:
+                device_name = str(tvm.gpu(0).device_name).replace(' ', '-')
+            except Exception as e:
+                device_name = 'titanx'
+            result_filename = 'tc-baseline-%s.tsv' % device_name
+
+            fout = open(result_filename, 'a')
             fout.write("\t".join(("%s-%d" % (args.task, i+1),
                                  "%s" % list(curves))) + '\n')
+            fout.close()
 
