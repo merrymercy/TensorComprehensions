@@ -327,11 +327,11 @@ void GeneticTunerHarness::doCompile(ExecutorType& engine) {
       pConf->optionalCompilationHandle =
           std::unique_ptr<size_t>(new size_t(handle));
     } catch (const std::exception& e) {
-      LOG(WARNING) << "[TUNER][COMPILE] failed compilation: " << e.what();
+      // LOG(WARNING) << "[TUNER][COMPILE] failed compilation: " << e.what();
       std::stringstream ssWarning;
       CudaMappingOptionsCppPrinter warningPrinter(ssWarning);
       warningPrinter << options;
-      LOG_LINE_BY_LINE(WARNING, ssWarning);
+      // LOG_LINE_BY_LINE(WARNING, ssWarning);
       pConf->invalid = true;
     }
     CHECK(pConf->invalid || pConf->optionalCompilationHandle)

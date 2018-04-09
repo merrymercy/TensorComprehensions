@@ -19,12 +19,7 @@ cd $HOME
 # protobuf
 mkdir -p /tmp/proto-install && cd /tmp/proto-install
 wget --quiet https://github.com/google/protobuf/archive/v3.4.0.zip -O proto.zip && unzip -qq proto.zip -d .
-cd protobuf-3.4.0 && ./autogen.sh && ./configure && make -j$N_CORE && sudo make install && ldconfig
+cd protobuf-3.4.0 && ./autogen.sh && ./configure && make -j$N_CORE && sudo make install && sudo ldconfig
 
-$PIP pyyaml
+sudo pip3 install pyyaml
 
-cd $HOME && git clone https://github.com/facebookresearch/TensorComprehensions.git --recursive
-cd TensorComprehensions
-git submodule update --init --recursive
-export TC_DIR=$(pwd)
-BUILD_TYPE=Release PYTHON=$(which python3) WITH_CAFFE2=OFF CLANG_PREFIX=$HOME/clang+llvm-tapir5.0 ./build.sh --all
