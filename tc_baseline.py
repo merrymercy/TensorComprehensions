@@ -1,5 +1,6 @@
 """
-generate tensor comprehension base line
+generate tensor comprehension baseline
+Usage: python3 tc_baseline.py --task resnet
 """
 
 import time
@@ -11,8 +12,10 @@ import re
 
 import numpy as np
 import torch
+from scipy.interpolate import interp1d
 
 import tensor_comprehensions as tc
+import tvm
 
 #tc.GlobalDebugInit(["--dump_cuda=true"])
 
@@ -58,7 +61,7 @@ if __name__ == '__main__':
 
     if '-' in args.task:
         # subprocess called by master process
-        # this mode is used to extract the stdout of c function by python script
+        # this is a walkaround for extracting the stdout of c function called by TC
         task, no = args.task.split('-')
         wkls = name2workloads(task)
 
@@ -90,12 +93,14 @@ if __name__ == '__main__':
         results = []
 
         for i in range(len(wkls)):
+            tic = time.time()
             N, H, C, M, KH, sh, pad, dtype = wkls[i]
             KW = KH
             sw = sh
             OH = (H + 2 * pad - KH) // sh + 1
             OW = OH
 
+            curves = []
             costs = []
             gflops = []
             for j in range(args.n_ave_curve):
@@ -105,29 +110,50 @@ if __name__ == '__main__':
                 print(cmd)
                 os.system(cmd)
 
+                xs = []
+                ys = []
                 with open(tmp_filename) as f:
                     lines = list(f.readlines())
                     # trackback to extract best for every generation
                     best = 1e9
                     for line in reversed(lines):
                         if 'Generation' in line:
-                            find = re.search("us:\s+(\d+)", line)
+                            find = re.search("Generation\s+(\d+).+?, (\d+)\)/.+?us:\s+(\d+)",
+                                             line)
                             if find is not None:
-                                cost = int(find.group(1))
-                                best = min(best, cost)
+                                gen, no, cost = [int(x) for x in
+                                                 (find.group(1), find.group(2), find.group(3))]
+                                no = gen * settings['pop_size'] + no
+                                if not xs or xs[-1] != no:
+                                    xs.append(no)
+                                    ys.append(flop / (cost / 1e6) / 1e9)
                         if 'Autotuning' in line:
                             break
                     cost = best / 1e6 # us -> s
-                    gflop = (flop / cost / 1e9)
+                xs = [0] + list(reversed(xs))
+                ys = [0] + list(reversed(ys))
 
-                    costs.append([cost])
-                    gflops.append([gflop])
+                keep = 0
+                for j in range(len(ys)):
+                    keep = max(keep, ys[j])
+                    ys[j] = keep
 
-            print("cost: %s\tgflops: %s" % (costs, gflops))
-            results.append(("%s-%d" % (args.task, i+1), "%s" % costs, "%s" % gflops))
+                interf = interp1d(xs, ys)
+                max_curve = interf(np.arange(settings['pop_size'] *
+                                             settings['generations']))
+                curves.append(list(max_curve))
 
-        import tvm
-        device_name = str(tvm.gpu(0).device_name).replace(' ', '-')
+                gflops.append(np.round(np.max(ys), 2))
+                costs.append(np.round(flop / np.max(ys) / 1e9, 6))
+
+            print("costs: %s\tgflops: %s\telapsed: %.2f" % (costs, gflops,
+                                (time.time() - tic) / args.n_ave_curve))
+            results.append(("%s-%d" % (args.task, i+1), "%s" % list(curves)))
+
+        try:
+            device_name = str(tvm.gpu(0).device_name).replace(' ', '-')
+        except Exception as e:
+            device_name = 'titanx'
         outfile_name = 'tc-baseline-%s.tsv' % device_name
         with open(outfile_name, 'w') as fout:
             for res in results:
