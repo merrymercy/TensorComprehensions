@@ -36,7 +36,7 @@ resnet_wkls = [
 ]
 
 settings = {
-    "threads": 8, "generations": 8, "pop_size": 50, "number_elites": 0
+    "threads": 8, "generations": 8, "pop_size": 50, "number_elites": 2
 }
 
 conv2d_lang = """
